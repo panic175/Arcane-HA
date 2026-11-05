@@ -27,7 +27,14 @@ HEADER_API_KEY: Final = "X-Api-Key"
 ALLOWED_SCHEMES: Final = ("http", "https")
 
 # Only these actions may be built into a request path.
-CONTAINER_ACTIONS: Final = ("start", "stop", "restart", "redeploy")
+CONTAINER_ACTIONS: Final = (
+    "start",
+    "stop",
+    "restart",
+    "redeploy",
+    "pause",
+    "unpause",
+)
 PROJECT_ACTIONS: Final = ("up", "down", "restart", "redeploy")
 
 # Arcane answers these project operations with a newline delimited log stream
@@ -423,7 +430,7 @@ class ArcaneClient:
     async def async_container_action(
         self, environment_id: str, container_id: str, action: str
     ) -> None:
-        """Run start, stop, restart or redeploy on a container."""
+        """Run start, stop, restart, redeploy, pause or unpause on a container."""
         if action not in CONTAINER_ACTIONS:
             raise ValueError(f"Unsupported container action: {action}")
         await self._request(

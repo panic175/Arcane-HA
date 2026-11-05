@@ -40,6 +40,7 @@ PERM_CONTAINERS_START: Final = "containers:start"
 PERM_CONTAINERS_STOP: Final = "containers:stop"
 PERM_CONTAINERS_RESTART: Final = "containers:restart"
 PERM_CONTAINERS_REDEPLOY: Final = "containers:redeploy"
+PERM_CONTAINERS_PAUSE: Final = "containers:pause"
 PERM_PROJECTS_LIST: Final = "projects:list"
 PERM_PROJECTS_DEPLOY: Final = "projects:deploy"
 PERM_PROJECTS_DOWN: Final = "projects:down"
@@ -59,6 +60,8 @@ CONTAINER_ACTION_PERMISSIONS: Final[dict[str, str]] = {
     "stop": PERM_CONTAINERS_STOP,
     "restart": PERM_CONTAINERS_RESTART,
     "redeploy": PERM_CONTAINERS_REDEPLOY,
+    "pause": PERM_CONTAINERS_PAUSE,
+    "unpause": PERM_CONTAINERS_PAUSE,
 }
 
 PROJECT_ACTION_PERMISSIONS: Final[dict[str, str]] = {
@@ -155,6 +158,7 @@ def _control_permissions(options: Mapping[str, Any]) -> list[str]:
             PERM_CONTAINERS_START,
             PERM_CONTAINERS_STOP,
             PERM_CONTAINERS_RESTART,
+            PERM_CONTAINERS_PAUSE,
         ]
         if redeploy or updates:
             permissions.append(PERM_CONTAINERS_REDEPLOY)

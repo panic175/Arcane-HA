@@ -645,3 +645,29 @@ async def test_read_only_mode_keeps_updates_visible_but_not_installable(
     state = hass.states.get("update.local_arcane")
     assert state.state == STATE_ON
     assert not state.attributes["supported_features"] & UpdateEntityFeature.INSTALL
+
+
+async def test_pause_and_resume_buttons(
+    hass: HomeAssistant, mock_client: AsyncMock, mock_config_entry: MockConfigEntry
+) -> None:
+    """Pause and unpause run the lifecycle endpoints of the container."""
+    await _setup(hass, mock_config_entry)
+
+    await hass.services.async_call(
+        "button",
+        "press",
+        {ATTR_ENTITY_ID: "button.container_homeassistant_pause"},
+        blocking=True,
+    )
+    mock_client.async_container_action.assert_awaited_once_with("0", "c1ffee", "pause")
+
+    mock_client.async_container_action.reset_mock()
+    await hass.services.async_call(
+        "button",
+        "press",
+        {ATTR_ENTITY_ID: "button.container_homeassistant_resume"},
+        blocking=True,
+    )
+    mock_client.async_container_action.assert_awaited_once_with(
+        "0", "c1ffee", "unpause"
+    )

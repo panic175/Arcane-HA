@@ -41,6 +41,16 @@ RESTART_BUTTON = ButtonEntityDescription(
     device_class=ButtonDeviceClass.RESTART,
 )
 
+PAUSE_BUTTON = ButtonEntityDescription(
+    key="pause",
+    translation_key="pause",
+)
+
+UNPAUSE_BUTTON = ButtonEntityDescription(
+    key="unpause",
+    translation_key="unpause",
+)
+
 REDEPLOY_BUTTON = ButtonEntityDescription(
     key="redeploy",
     translation_key="redeploy",
@@ -79,6 +89,8 @@ async def async_setup_entry(
         ),
         containers=lambda environment_id, name: [
             ArcaneContainerButton(coordinator, environment_id, name, RESTART_BUTTON),
+            ArcaneContainerButton(coordinator, environment_id, name, PAUSE_BUTTON),
+            ArcaneContainerButton(coordinator, environment_id, name, UNPAUSE_BUTTON),
             *(
                 [
                     ArcaneContainerButton(

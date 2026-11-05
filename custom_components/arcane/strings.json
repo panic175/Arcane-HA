@@ -148,6 +148,12 @@
       "restart": {
         "name": "Restart"
       },
+      "pause": {
+        "name": "Pause"
+      },
+      "unpause": {
+        "name": "Resume"
+      },
       "redeploy": {
         "name": "Redeploy"
       },
