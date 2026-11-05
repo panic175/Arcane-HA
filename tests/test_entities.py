@@ -230,6 +230,19 @@ async def test_auth_error_triggers_reauth(
     )
 
 
+async def test_a_broken_connection_fails_the_refresh(
+    hass: HomeAssistant, mock_client: AsyncMock, mock_config_entry: MockConfigEntry
+) -> None:
+    """A failing fetch keeps the entry from setting up and retries later."""
+    mock_client.async_get_version.side_effect = ArcaneConnectionError("down")
+    mock_config_entry.add_to_hass(hass)
+
+    assert not await hass.config_entries.async_setup(mock_config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert mock_config_entry.state is ConfigEntryState.SETUP_RETRY
+
+
 async def test_unload(
     hass: HomeAssistant, mock_client: AsyncMock, mock_config_entry: MockConfigEntry
 ) -> None:
