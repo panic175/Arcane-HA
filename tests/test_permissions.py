@@ -63,6 +63,7 @@ def test_defaults_need_read_and_control() -> None:
         "containers:start",
         "containers:stop",
         "containers:restart",
+        "containers:pause",
         "containers:redeploy",
         "projects:deploy",
         "projects:down",
@@ -107,6 +108,7 @@ def test_options_only_ask_for_what_they_use() -> None:
         "containers:start",
         "containers:stop",
         "containers:restart",
+        "containers:pause",
         "system:prune",
     ]
 

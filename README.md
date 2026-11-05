@@ -58,9 +58,9 @@ list.
 
 Monitoring needs `environments:list`, `containers:list`, `projects:list`, `images:list`,
 `volumes:list`, `networks:list` and `system:read`. Controlling things adds
-`containers:start`, `containers:stop`, `containers:restart`, `containers:redeploy`,
-`projects:deploy`, `projects:down` and `projects:restart`. Pruning needs `system:prune`
-and upgrading Arcane itself needs `system:upgrade`.
+`containers:start`, `containers:stop`, `containers:restart`, `containers:pause`,
+`containers:redeploy`, `projects:deploy`, `projects:down` and `projects:restart`.
+Pruning needs `system:prune` and upgrading Arcane itself needs `system:upgrade`.
 
 Only `environments:list` is required. A key without the rest still sets up; the parts it
 cannot reach stay empty and actions fail with an error naming the permission. Whenever
@@ -97,6 +97,7 @@ Arcane refuses a call, the permission lands in a repair under
 | CPU usage, Memory used, Memory usage, Memory limit | sensor | Off by default, see the options |
 | Image, Created | sensor | Diagnostic |
 | Restart | button | |
+| Pause, Resume | button | |
 | Redeploy | button | Off by default |
 
 ### Compose project

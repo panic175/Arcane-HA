@@ -693,3 +693,29 @@ async def test_container_resource_sensors_are_off_by_default(
     await _setup(hass, mock_config_entry)
 
     assert hass.states.get("sensor.container_homeassistant_cpu_usage") is None
+
+
+async def test_pause_and_resume_buttons(
+    hass: HomeAssistant, mock_client: AsyncMock, mock_config_entry: MockConfigEntry
+) -> None:
+    """Pause and unpause run the lifecycle endpoints of the container."""
+    await _setup(hass, mock_config_entry)
+
+    await hass.services.async_call(
+        "button",
+        "press",
+        {ATTR_ENTITY_ID: "button.container_homeassistant_pause"},
+        blocking=True,
+    )
+    mock_client.async_container_action.assert_awaited_once_with("0", "c1ffee", "pause")
+
+    mock_client.async_container_action.reset_mock()
+    await hass.services.async_call(
+        "button",
+        "press",
+        {ATTR_ENTITY_ID: "button.container_homeassistant_resume"},
+        blocking=True,
+    )
+    mock_client.async_container_action.assert_awaited_once_with(
+        "0", "c1ffee", "unpause"
+    )
