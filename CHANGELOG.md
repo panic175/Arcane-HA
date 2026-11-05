@@ -5,6 +5,27 @@ and a published GitHub release, and that release is what HACS installs. The vers
 `custom_components/arcane/manifest.json` is the one being released; the release workflow
 refuses a tag that disagrees with it or with this file.
 
+## 0.6.0 (2026-11-05)
+
+### Added
+
+- Container resource sensors: CPU usage, memory used, memory usage and memory limit,
+  read from the sample Arcane attaches to each entry of the container list. They sit
+  behind a new option, container resource sensors, which is off by default, and need
+  no permission beyond `containers:list`.
+- A project Update button, offered with the extra buttons, calls update-services: it
+  pulls the newest images and recreates the services, so the updates a project reports
+  can be installed in one press instead of one container at a time. It needs the
+  `projects:update` permission.
+- Pause and resume buttons next to restart for containers, gated on the
+  `containers:pause` permission Arcane uses for both directions.
+
+### Fixed
+
+- An environment whose calls were only refused for lack of permissions is no longer
+  shown as offline. A refusal is an answer from Arcane, not a failed connection; the
+  repair that names the missing permission stays the report for that case.
+
 ## 0.5.2 (2026-10-10)
 
 ### Fixed
