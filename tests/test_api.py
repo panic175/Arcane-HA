@@ -2,14 +2,18 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 
 import pytest
 from aiohttp import web
 
+from custom_components.arcane import api as arcane_api
 from custom_components.arcane.api import (
     ArcaneAuthenticationError,
     ArcaneClient,
+    ArcaneConnectionError,
+    ArcanePermissionError,
     ArcaneResponseError,
     validate_url,
 )
@@ -24,6 +28,8 @@ async def arcane_server(aiohttp_client, socket_enabled):
     async def containers(request: web.Request) -> web.Response:
         seen["api_key"] = request.headers.get("X-Api-Key", "")
         seen["limit"] = request.query.get("limit", "")
+        seen["includeInternal"] = request.query.get("includeInternal", "")
+        seen["includeHidden"] = request.query.get("includeHidden", "")
         return web.json_response(
             {"success": True, "data": [{"id": "abc", "names": ["/nginx"]}]}
         )
@@ -116,6 +122,36 @@ async def arcane_server(aiohttp_client, socket_enabled):
     async def redirect(request: web.Request) -> web.Response:
         raise web.HTTPFound(location="http://attacker.example/api")
 
+    async def app_version(request: web.Request) -> web.Response:
+        seen["path"] = request.raw_path
+        return web.json_response(
+            seen.get("app_version_payload", {"success": True, "data": []})
+        )
+
+    async def prune(request: web.Request) -> web.Response:
+        seen["prune_body"] = await request.json()
+        return web.json_response(
+            seen.get(
+                "prune_payload", {"success": True, "data": {"spaceReclaimed": 512}}
+            )
+        )
+
+    async def update_services(request: web.Request) -> web.Response:
+        seen["update_services_path"] = request.raw_path
+        seen["update_services_body"] = await request.json()
+        return web.json_response({"success": True, "data": {"message": "ok"}})
+
+    async def slow_container(request: web.Request) -> web.Response:
+        """Take longer than a deliberately shortened plain-action timeout."""
+        await asyncio.sleep(0.2)
+        return web.json_response({"success": True})
+
+    async def host_stats_denied(request: web.Request) -> web.Response:
+        return web.Response(status=401)
+
+    async def host_stats_forbidden(request: web.Request) -> web.Response:
+        return web.Response(status=403)
+
     async def catch_all(request: web.Request) -> web.Response:
         seen["path"] = request.raw_path
         return web.json_response({"success": True, "data": []})
@@ -132,7 +168,15 @@ async def arcane_server(aiohttp_client, socket_enabled):
     app.router.add_post("/api/environments/3/projects/web/up", deploy_no_newline)
     app.router.add_get("/api/environments/0/ws/system/stats", host_stats)
     app.router.add_get("/api/environments/6/ws/system/stats", host_stats_redirect)
+    app.router.add_get("/api/environments/7/ws/system/stats", host_stats_denied)
+    app.router.add_get("/api/environments/8/ws/system/stats", host_stats_forbidden)
     app.router.add_get("/elsewhere/stats", host_stats)
+    app.router.add_get("/api/app-version", app_version)
+    app.router.add_post("/api/environments/0/system/prune", prune)
+    app.router.add_post(
+        "/api/environments/0/projects/web/update-services", update_services
+    )
+    app.router.add_post("/api/environments/0/containers/slow/{action}", slow_container)
     app.router.add_route("*", "/{tail:.*}", catch_all)
 
     http = await aiohttp_client(app)
@@ -315,3 +359,107 @@ async def test_stream_without_newlines_is_refused(arcane_server) -> None:
 
     with pytest.raises(ArcaneResponseError, match="malformed"):
         await client.async_project_action("3", "web", "up")
+
+
+async def test_version_is_returned_as_is(arcane_server) -> None:
+    """The version endpoint answers with the payload itself, not an envelope."""
+    http, seen = arcane_server
+    client = ArcaneClient(http.session, str(http.make_url("")), "secret")
+
+    version = await client.async_get_version()
+
+    assert version["data"] == []
+    assert seen["path"] == "/api/app-version"
+
+
+async def test_version_that_is_not_an_object_is_refused(arcane_server) -> None:
+    """A version reply that is not an object is a protocol error."""
+    http, seen = arcane_server
+    seen["app_version_payload"] = ["not", "an", "object"]
+    client = ArcaneClient(http.session, str(http.make_url("")), "secret")
+
+    with pytest.raises(ArcaneResponseError, match="version endpoint"):
+        await client.async_get_version()
+
+
+async def test_prune_returns_what_was_reclaimed(arcane_server) -> None:
+    """The prune sends its options and unwraps the result."""
+    http, seen = arcane_server
+    client = ArcaneClient(http.session, str(http.make_url("")), "secret")
+
+    result = await client.async_prune("0", unused_images=True)
+
+    assert result == {"spaceReclaimed": 512}
+    assert seen["prune_body"]["images"]["mode"] == "all"
+    assert seen["prune_body"]["networks"] == {"mode": "unused"}
+    assert seen["prune_body"]["buildCache"] == {"mode": "unused"}
+
+
+async def test_prune_without_a_result_object_returns_nothing(arcane_server) -> None:
+    """A prune reply without a result object reads as nothing reclaimed."""
+    http, seen = arcane_server
+    seen["prune_payload"] = {"success": True}
+    client = ArcaneClient(http.session, str(http.make_url("")), "secret")
+
+    assert await client.async_prune("0", unused_images=False) == {}
+
+
+async def test_project_update_services_pulls_and_recreates(arcane_server) -> None:
+    """The update names the endpoint that pulls and recreates all services."""
+    http, seen = arcane_server
+    client = ArcaneClient(http.session, str(http.make_url("")), "secret")
+
+    await client.async_project_action("0", "web", "update-services")
+
+    assert (
+        seen["update_services_path"]
+        == "/api/environments/0/projects/web/update-services"
+    )
+    assert seen["update_services_body"] == {"services": []}
+
+
+async def test_containers_ask_for_the_plain_list_by_default(arcane_server) -> None:
+    """Without a flag the client asks for the list the Arcane UI shows."""
+    http, seen = arcane_server
+    client = ArcaneClient(http.session, str(http.make_url("")), "secret")
+
+    await client.async_get_containers("0")
+    assert seen["includeInternal"] == "false"
+    assert seen["includeHidden"] == "false"
+
+    await client.async_get_containers("0", include_hidden=True)
+    assert seen["includeHidden"] == "true"
+
+
+async def test_a_redeploy_gets_the_longer_timeout(
+    arcane_server, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A redeploy pulls images, so it waits longer than a plain action."""
+    http, _ = arcane_server
+    monkeypatch.setattr(arcane_api, "ACTION_TIMEOUT", 0.05)
+    client = ArcaneClient(http.session, str(http.make_url("")), "secret")
+
+    with pytest.raises(ArcaneConnectionError, match="Timeout"):
+        await client.async_container_action("0", "slow", "start")
+
+    await client.async_container_action("0", "slow", "redeploy")
+
+
+async def test_host_stats_without_a_key_is_an_authentication_error(
+    arcane_server,
+) -> None:
+    """A handshake Arcane refuses with 401 is an authentication error."""
+    http, _ = arcane_server
+    client = ArcaneClient(http.session, str(http.make_url("")), "secret")
+
+    with pytest.raises(ArcaneAuthenticationError, match="rejected the API key"):
+        await client.async_get_host_stats("7")
+
+
+async def test_host_stats_without_the_permission_names_it(arcane_server) -> None:
+    """A handshake Arcane refuses with 403 names the missing permission."""
+    http, _ = arcane_server
+    client = ArcaneClient(http.session, str(http.make_url("")), "secret")
+
+    with pytest.raises(ArcanePermissionError, match="not allowed"):
+        await client.async_get_host_stats("8")
