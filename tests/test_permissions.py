@@ -11,7 +11,10 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import issue_registry as ir
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.arcane.api import ArcanePermissionError
+from custom_components.arcane.api import (
+    ArcaneConnectionError,
+    ArcanePermissionError,
+)
 from custom_components.arcane.const import (
     CONF_ALLOW_CONTROL,
     CONF_HOST_STATS,
@@ -203,3 +206,49 @@ async def test_refused_action_names_the_permission(
         )
         is not None
     )
+
+
+async def test_only_refused_calls_keep_the_environment_online(
+    hass: HomeAssistant, mock_client: AsyncMock, mock_config_entry: MockConfigEntry
+) -> None:
+    """A key that may not poll still sees the environment as online.
+
+    A refusal is an answer from Arcane, not a failed connection, so a key
+    that is too narrow must not read as an environment that is down.
+    """
+    for name in (
+        "async_get_containers",
+        "async_get_projects",
+        "async_get_image_counts",
+        "async_get_volume_counts",
+        "async_get_network_counts",
+        "async_get_docker_info",
+    ):
+        getattr(mock_client, name).side_effect = ArcanePermissionError("nope")
+
+    await _setup(hass, mock_config_entry)
+
+    environment = mock_config_entry.runtime_data.data.environments["0"]
+    assert environment.reachable is True
+    assert environment.is_online is True
+
+
+async def test_failed_calls_mark_the_environment_offline(
+    hass: HomeAssistant, mock_client: AsyncMock, mock_config_entry: MockConfigEntry
+) -> None:
+    """Calls that get no answer mark the environment as not reachable."""
+    for name in (
+        "async_get_containers",
+        "async_get_projects",
+        "async_get_image_counts",
+        "async_get_volume_counts",
+        "async_get_network_counts",
+        "async_get_docker_info",
+    ):
+        getattr(mock_client, name).side_effect = ArcaneConnectionError("down")
+
+    await _setup(hass, mock_config_entry)
+
+    environment = mock_config_entry.runtime_data.data.environments["0"]
+    assert environment.reachable is False
+    assert environment.is_online is False
