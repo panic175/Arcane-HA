@@ -46,6 +46,11 @@ REDEPLOY_BUTTON = ButtonEntityDescription(
     translation_key="redeploy",
 )
 
+UPDATE_BUTTON = ButtonEntityDescription(
+    key="update",
+    translation_key="update",
+)
+
 PRUNE_BUTTON = ButtonEntityDescription(
     key="prune",
     translation_key="prune",
@@ -97,7 +102,10 @@ async def async_setup_entry(
                 [
                     ArcaneProjectButton(
                         coordinator, environment_id, project_id, REDEPLOY_BUTTON
-                    )
+                    ),
+                    ArcaneProjectButton(
+                        coordinator, environment_id, project_id, UPDATE_BUTTON
+                    ),
                 ]
                 if redeploy
                 else []
@@ -139,15 +147,18 @@ class ArcaneProjectButton(ArcaneProjectEntity, ButtonEntity):
     async def async_press(self) -> None:
         """Run the action this button stands for."""
         action = self.entity_description.key
+        # Arcane names the endpoint that pulls the newest images and
+        # recreates the services update-services.
+        api_action = "update-services" if action == "update" else action
         try:
             await self.coordinator.client.async_project_action(
-                self.environment_id, self.project_id, action
+                self.environment_id, self.project_id, api_action
             )
         except ArcaneError as err:
             raise action_error(
                 self.coordinator,
                 err,
-                permission=PROJECT_ACTION_PERMISSIONS[action],
+                permission=PROJECT_ACTION_PERMISSIONS[api_action],
                 action_key="project_action",
                 placeholders={
                     "action": action,

@@ -108,6 +108,7 @@ Arcane refuses a call, the permission lands in a repair under
 | Services, Services running | sensor | |
 | Restart | button | |
 | Redeploy | button | Off by default |
+| Update | button | Off by default, pulls the newest images and recreates the services |
 
 Containers appear as child devices of their Compose project, and containers and projects
 that come and go in Arcane are added and removed while Home Assistant keeps running.

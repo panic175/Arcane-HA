@@ -44,6 +44,7 @@ PERM_PROJECTS_LIST: Final = "projects:list"
 PERM_PROJECTS_DEPLOY: Final = "projects:deploy"
 PERM_PROJECTS_DOWN: Final = "projects:down"
 PERM_PROJECTS_RESTART: Final = "projects:restart"
+PERM_PROJECTS_UPDATE: Final = "projects:update"
 PERM_IMAGES_LIST: Final = "images:list"
 PERM_VOLUMES_LIST: Final = "volumes:list"
 PERM_NETWORKS_LIST: Final = "networks:list"
@@ -66,6 +67,7 @@ PROJECT_ACTION_PERMISSIONS: Final[dict[str, str]] = {
     "down": PERM_PROJECTS_DOWN,
     "restart": PERM_PROJECTS_RESTART,
     "redeploy": PERM_PROJECTS_DEPLOY,
+    "update-services": PERM_PROJECTS_UPDATE,
 }
 
 # The permission behind each request the coordinator makes per environment,
@@ -164,6 +166,10 @@ def _control_permissions(options: Mapping[str, Any]) -> list[str]:
             PERM_PROJECTS_DOWN,
             PERM_PROJECTS_RESTART,
         ]
+        if redeploy:
+            # The update button pulls the newest images and recreates the
+            # services of the project.
+            permissions.append(PERM_PROJECTS_UPDATE)
     if updates:
         permissions.append(PERM_SYSTEM_UPGRADE)
     if _option(options, CONF_PRUNE_BUTTON) != PRUNE_OFF:

@@ -28,7 +28,7 @@ ALLOWED_SCHEMES: Final = ("http", "https")
 
 # Only these actions may be built into a request path.
 CONTAINER_ACTIONS: Final = ("start", "stop", "restart", "redeploy")
-PROJECT_ACTIONS: Final = ("up", "down", "restart", "redeploy")
+PROJECT_ACTIONS: Final = ("up", "down", "restart", "redeploy", "update-services")
 
 # Arcane answers these project operations with a newline delimited log stream
 # instead of a JSON envelope.
@@ -437,12 +437,19 @@ class ArcaneClient:
     async def async_project_action(
         self, environment_id: str, project_id: str, action: str
     ) -> None:
-        """Bring a compose project up or down, restart or redeploy it."""
+        """Run a project action: up, down, restart, redeploy or update services."""
         if action not in PROJECT_ACTIONS:
             raise ValueError(f"Unsupported project action: {action}")
         url = self._url("environments", environment_id, "projects", project_id, action)
         if action in STREAMING_PROJECT_ACTIONS:
             await self._stream(url, timeout=DEPLOY_TIMEOUT)
+            return
+        if action == "update-services":
+            # Pulls the newest images and recreates the services, so it takes
+            # as long as a deploy.
+            await self._request(
+                "POST", url, json={"services": []}, timeout=DEPLOY_TIMEOUT
+            )
             return
         await self._request("POST", url, timeout=ACTION_TIMEOUT)
 
