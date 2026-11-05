@@ -44,6 +44,7 @@ from .api import (
 )
 from .const import (
     CONF_ALLOW_CONTROL,
+    CONF_CONTAINER_STATS,
     CONF_ENTITY_PREFIX,
     CONF_ENVIRONMENTS,
     CONF_EVENTS,
@@ -406,6 +407,7 @@ class ArcaneOptionsFlow(OptionsFlow):
                 {
                     vol.Required(CONF_UPDATE_ENTITIES): bool,
                     vol.Required(CONF_HEALTH_SENSORS): bool,
+                    vol.Required(CONF_CONTAINER_STATS): bool,
                     vol.Required(CONF_ENTITY_PREFIX): bool,
                     vol.Required(CONF_NEST_CONTAINERS): bool,
                     vol.Required(CONF_EVENTS): bool,

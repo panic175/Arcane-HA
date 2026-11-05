@@ -21,6 +21,7 @@ CONF_ALLOW_CONTROL: Final = "allow_control"
 CONF_UPDATE_ENTITIES: Final = "update_entities"
 CONF_HOST_STATS: Final = "host_stats"
 CONF_HEALTH_SENSORS: Final = "health_sensors"
+CONF_CONTAINER_STATS: Final = "container_stats"
 CONF_ENTITY_PREFIX: Final = "entity_prefix"
 CONF_NEST_CONTAINERS: Final = "nest_containers"
 CONF_EVENTS: Final = "events"
@@ -50,6 +51,7 @@ DEFAULT_OPTIONS: Final[dict[str, object]] = {
     CONF_UPDATE_ENTITIES: True,
     CONF_HOST_STATS: False,
     CONF_HEALTH_SENSORS: True,
+    CONF_CONTAINER_STATS: False,
     CONF_ENTITY_PREFIX: True,
     CONF_NEST_CONTAINERS: True,
     CONF_EVENTS: True,

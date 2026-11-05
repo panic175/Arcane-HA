@@ -19,6 +19,7 @@ from homeassistant.helpers.typing import StateType
 
 from . import ArcaneConfigEntry
 from .const import (
+    CONF_CONTAINER_STATS,
     CONF_HEALTH_SENSORS,
     CONF_HOST_STATS,
     CONF_MONITOR_CONTAINERS,
@@ -52,6 +53,8 @@ class ArcaneContainerSensorDescription(SensorEntityDescription):
     """Describes an Arcane container sensor."""
 
     value_fn: Callable[[ArcaneContainer], StateType | datetime]
+    #: Option that has to be on for this sensor to have anything to report.
+    requires: str | None = None
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -269,6 +272,47 @@ CONTAINER_SENSORS: tuple[ArcaneContainerSensorDescription, ...] = (
         entity_registry_enabled_default=False,
         value_fn=lambda container: container.created,
     ),
+    ArcaneContainerSensorDescription(
+        key="cpu_percent",
+        requires=CONF_CONTAINER_STATS,
+        translation_key="container_cpu_percent",
+        native_unit_of_measurement=PERCENTAGE,
+        suggested_display_precision=1,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda container: container.cpu_percent,
+    ),
+    ArcaneContainerSensorDescription(
+        key="memory_used",
+        requires=CONF_CONTAINER_STATS,
+        translation_key="container_memory_used",
+        device_class=SensorDeviceClass.DATA_SIZE,
+        native_unit_of_measurement=UnitOfInformation.BYTES,
+        suggested_unit_of_measurement=UnitOfInformation.GIGABYTES,
+        suggested_display_precision=2,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda container: container.memory_used,
+    ),
+    ArcaneContainerSensorDescription(
+        key="memory_percent",
+        requires=CONF_CONTAINER_STATS,
+        translation_key="container_memory_percent",
+        native_unit_of_measurement=PERCENTAGE,
+        suggested_display_precision=1,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda container: container.memory_percent,
+    ),
+    ArcaneContainerSensorDescription(
+        key="memory_limit",
+        requires=CONF_CONTAINER_STATS,
+        translation_key="container_memory_limit",
+        device_class=SensorDeviceClass.DATA_SIZE,
+        native_unit_of_measurement=UnitOfInformation.BYTES,
+        suggested_unit_of_measurement=UnitOfInformation.GIGABYTES,
+        suggested_display_precision=2,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+        value_fn=lambda container: container.memory_limit,
+    ),
 )
 
 ARCANE_VERSION_SENSOR = SensorEntityDescription(
@@ -321,6 +365,8 @@ async def async_setup_entry(
         containers=lambda environment_id, name: [
             ArcaneContainerSensor(coordinator, environment_id, name, description)
             for description in CONTAINER_SENSORS
+            if description.requires is None
+            or coordinator.option(description.requires)
         ],
         projects=lambda environment_id, project_id: [
             ArcaneProjectSensor(coordinator, environment_id, project_id, description)
