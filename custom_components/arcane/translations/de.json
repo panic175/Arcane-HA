@@ -155,6 +155,9 @@
       },
       "prune": {
         "name": "Ungenutztes entfernen"
+      },
+      "update": {
+        "name": "Aktualisieren"
       }
     },
     "sensor": {

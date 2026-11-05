@@ -155,6 +155,9 @@
       },
       "prune": {
         "name": "Prune unused"
+      },
+      "update": {
+        "name": "Update"
       }
     },
     "sensor": {

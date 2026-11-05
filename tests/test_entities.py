@@ -148,6 +148,9 @@ async def test_project_switch_and_button(
         "0", "smarthome", "restart"
     )
 
+    # The update button only appears with the extra buttons turned on.
+    assert hass.states.get("button.project_smarthome_update") is None
+
 
 async def test_new_container_is_added_on_refresh(
     hass: HomeAssistant, mock_client: AsyncMock, mock_config_entry: MockConfigEntry
@@ -434,6 +437,23 @@ async def test_redeploy_and_prune_buttons(
         blocking=True,
     )
     mock_client.async_prune.assert_awaited_once_with("0", unused_images=True)
+
+
+async def test_project_update_button(
+    hass: HomeAssistant, mock_client: AsyncMock, mock_config_entry: MockConfigEntry
+) -> None:
+    """The update button pulls the newest images through update-services."""
+    await _setup(hass, mock_config_entry, {CONF_REDEPLOY_BUTTONS: True})
+
+    await hass.services.async_call(
+        "button",
+        "press",
+        {ATTR_ENTITY_ID: "button.project_smarthome_update"},
+        blocking=True,
+    )
+    mock_client.async_project_action.assert_awaited_once_with(
+        "0", "smarthome", "update-services"
+    )
 
 
 async def test_events(

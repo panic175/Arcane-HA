@@ -22,6 +22,7 @@ from custom_components.arcane.const import (
     CONF_MONITOR_PROJECTS,
     CONF_MONITOR_RESOURCES,
     CONF_PRUNE_BUTTON,
+    CONF_REDEPLOY_BUTTONS,
     CONF_UPDATE_ENTITIES,
     DEFAULT_OPTIONS,
     DOMAIN,
@@ -76,6 +77,15 @@ def test_read_only_options_need_no_control() -> None:
 
     assert needed.control == []
     assert "containers:list" in needed.monitoring
+
+
+def test_project_update_permission_follows_the_extra_buttons() -> None:
+    """Only the extra project buttons ask for the permission behind an update."""
+    assert "projects:update" not in required_permissions({}).control
+
+    needed = required_permissions({**DEFAULT_OPTIONS, CONF_REDEPLOY_BUTTONS: True})
+
+    assert "projects:update" in needed.control
 
 
 def test_options_only_ask_for_what_they_use() -> None:
