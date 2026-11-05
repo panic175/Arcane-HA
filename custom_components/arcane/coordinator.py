@@ -257,10 +257,13 @@ class ArcaneCoordinator(DataUpdateCoordinator[ArcaneData]):
             )
             self._reraise_fatal(results)
             self._note_denied_polling(results)
-            # Arcane answered at least once, so the environment itself is up
-            # even if some of the calls were refused.
+            # Arcane answered at least once, so the environment itself is up.
+            # A refusal is an answer too: it says the key may not ask, nothing
+            # about whether the environment could be reached.
             environment.reachable = any(
-                not isinstance(result, ArcaneError) for result in results.values()
+                not isinstance(result, ArcaneError)
+                or isinstance(result, ArcanePermissionError)
+                for result in results.values()
             )
         else:
             environment.reachable = True
