@@ -13,6 +13,7 @@ from homeassistant.const import (
     CONF_SCAN_INTERVAL,
     STATE_OFF,
     STATE_ON,
+    STATE_UNKNOWN,
 )
 from homeassistant.core import Event, HomeAssistant
 from homeassistant.helpers import device_registry as dr
@@ -25,6 +26,7 @@ from custom_components.arcane.api import (
 )
 from custom_components.arcane.const import (
     CONF_ALLOW_CONTROL,
+    CONF_CONTAINER_STATS,
     CONF_ENTITY_PREFIX,
     CONF_ENVIRONMENTS,
     CONF_EVENTS,
@@ -645,3 +647,29 @@ async def test_read_only_mode_keeps_updates_visible_but_not_installable(
     state = hass.states.get("update.local_arcane")
     assert state.state == STATE_ON
     assert not state.attributes["supported_features"] & UpdateEntityFeature.INSTALL
+
+
+async def test_container_resource_sensors(
+    hass: HomeAssistant, mock_client: AsyncMock, mock_config_entry: MockConfigEntry
+) -> None:
+    """The resource sensors read the sample Arcane attaches to the list."""
+    await _setup(hass, mock_config_entry, {CONF_CONTAINER_STATS: True})
+
+    assert hass.states.get("sensor.container_homeassistant_cpu_usage").state == "12.5"
+    memory = hass.states.get("sensor.container_homeassistant_memory_used")
+    assert memory.state == "0.536870912"
+    percent = hass.states.get("sensor.container_homeassistant_memory_usage")
+    assert percent.state == "25.0"
+    # A container without a sample reports unknown rather than a zero.
+    assert (
+        hass.states.get("sensor.container_whoami_cpu_usage").state == STATE_UNKNOWN
+    )
+
+
+async def test_container_resource_sensors_are_off_by_default(
+    hass: HomeAssistant, mock_client: AsyncMock, mock_config_entry: MockConfigEntry
+) -> None:
+    """Without the option the container list does not gain new sensors."""
+    await _setup(hass, mock_config_entry)
+
+    assert hass.states.get("sensor.container_homeassistant_cpu_usage") is None

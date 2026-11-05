@@ -44,6 +44,12 @@ CONTAINERS_PAYLOAD = [
             "com.docker.compose.project": "smarthome",
             "com.docker.compose.service": "homeassistant",
         },
+        "resourceSample": {
+            "cpuPercent": 12.5,
+            "memoryUsageBytes": 536870912,
+            "memoryLimitBytes": 2147483648,
+            "sampleTime": "2026-10-10T10:00:00Z",
+        },
         "updateInfo": {
             "hasUpdate": True,
             "currentVersion": "2025.1.0",

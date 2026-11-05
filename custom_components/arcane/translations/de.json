@@ -86,6 +86,7 @@
         "data": {
           "update_entities": "Update Entitäten für Images",
           "health_sensors": "Health Binärsensoren",
+          "container_stats": "Container-Ressourcen-Sensoren",
           "entity_prefix": "Gerätenamen mit ihrer Art voranstellen",
           "nest_containers": "Container unter ihrem Projekt einordnen",
           "events": "Events auf dem Home Assistant Bus auslösen"
@@ -93,6 +94,7 @@
         "data_description": {
           "update_entities": "Pro Container eine Update Entität anbieten, die per Redeploy auf das neuere Image wechselt.",
           "health_sensors": "Container mit Health Check bekommen einen Sensor Healthy.",
+          "container_stats": "Sensoren für die von einem Container gemeldete CPU- und Speichernutzung hinzufügen.",
           "entity_prefix": "Geräte als Container x und Project x benennen, damit ein Container und ein Projekt mit gleichem Namen nicht kollidieren. Bereits vorhandene Entity IDs bleiben unverändert.",
           "nest_containers": "Einen Container als Untergerät des Compose Projekts anzeigen, zu dem er gehört.",
           "events": "Löst arcane_container_state_changed, arcane_container_health_changed und arcane_project_state_changed aus, damit Automatisierungen auf Abstürze und Health Wechsel reagieren können."
@@ -223,6 +225,18 @@
       },
       "container_image": {
         "name": "Image"
+      },
+      "container_cpu_percent": {
+        "name": "CPU-Auslastung"
+      },
+      "container_memory_used": {
+        "name": "Arbeitsspeicher belegt"
+      },
+      "container_memory_percent": {
+        "name": "Arbeitsspeicher Auslastung"
+      },
+      "container_memory_limit": {
+        "name": "Arbeitsspeicher Limit"
       },
       "container_created": {
         "name": "Erstellt"

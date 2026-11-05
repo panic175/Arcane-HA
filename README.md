@@ -94,6 +94,7 @@ Arcane refuses a call, the permission lands in a repair under
 | Running, Update available | binary sensor | |
 | Healthy | binary sensor | Only with a health check defined |
 | State, Status | sensor | `running`, `exited`, `paused` and so on |
+| CPU usage, Memory used, Memory usage, Memory limit | sensor | Off by default, see the options |
 | Image, Created | sensor | Diagnostic |
 | Restart | button | |
 | Redeploy | button | Off by default |
@@ -122,7 +123,7 @@ host statistics are polled at all. Internal and hidden containers are skipped un
 ask for them. Switching a part off also stops the API calls behind it, which keeps a big
 host manageable.
 
-**Entities:** update entities, health sensors, device name prefixes, nesting containers
+**Entities:** update entities, health sensors, container resource sensors, device name prefixes, nesting containers
 under their project, and firing events.
 
 **Control:** whether Home Assistant may control anything at all, plus the redeploy and
@@ -183,8 +184,9 @@ to act immediately.
 
 **Host statistics** are off by default. Arcane only offers them over a WebSocket and
 sends the current sample right after the handshake, so the integration opens a socket,
-takes one sample per update and closes it again. Per container CPU and memory are not
-available: Arcane wants one socket per container and refuses more than five at a time.
+takes one sample per update and closes it again. Per container CPU and memory come from
+the sample Arcane attaches to each entry of the container list; the live per-container
+sockets are not used, Arcane refuses more than five at a time.
 
 **Security.** The API key travels in the `X-Api-Key` header, never in a URL, and is
 redacted from diagnostics. Only `http://` and `https://` addresses are accepted, and

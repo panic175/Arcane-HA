@@ -86,6 +86,7 @@
         "data": {
           "update_entities": "Image update entities",
           "health_sensors": "Health binary sensors",
+          "container_stats": "Container resource sensors",
           "entity_prefix": "Prefix device names with their kind",
           "nest_containers": "Nest containers under their project",
           "events": "Fire events on the Home Assistant bus"
@@ -93,6 +94,7 @@
         "data_description": {
           "update_entities": "Offer an update entity per container that redeploys it onto the newer image.",
           "health_sensors": "Add a Healthy sensor to containers that define a health check.",
+          "container_stats": "Add sensors for the CPU and memory a container reports.",
           "entity_prefix": "Name devices Container x and Project x so a container and a project of the same name do not collide. Entity IDs that already exist keep their current name.",
           "nest_containers": "Show a container as a child device of the Compose project it belongs to.",
           "events": "Fire arcane_container_state_changed, arcane_container_health_changed and arcane_project_state_changed so automations can react to crashes and health changes."
@@ -223,6 +225,18 @@
       },
       "container_image": {
         "name": "Image"
+      },
+      "container_cpu_percent": {
+        "name": "CPU usage"
+      },
+      "container_memory_used": {
+        "name": "Memory used"
+      },
+      "container_memory_percent": {
+        "name": "Memory usage"
+      },
+      "container_memory_limit": {
+        "name": "Memory limit"
       },
       "container_created": {
         "name": "Created"

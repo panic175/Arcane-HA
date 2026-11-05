@@ -126,6 +126,11 @@ def _created_at(value: Any) -> datetime | None:
     return None
 
 
+def _number(value: Any) -> int | float | None:
+    """Return a numeric sample value, or None when it is not a number."""
+    return value if isinstance(value, (int, float)) else None
+
+
 @dataclass(slots=True)
 class ArcaneContainer:
     """A single Docker container as reported by Arcane."""
@@ -141,6 +146,9 @@ class ArcaneContainer:
     latest_version: str | None
     health: str | None
     exit_code: int | None
+    cpu_percent: int | float | None
+    memory_used: int | float | None
+    memory_limit: int | float | None
     project: str | None
     service: str | None
 
@@ -156,6 +164,13 @@ class ArcaneContainer:
             return None
         return self.health == HEALTH_HEALTHY
 
+    @property
+    def memory_percent(self) -> float | None:
+        """Return the share of the container's memory limit in use."""
+        if not self.memory_used or not self.memory_limit:
+            return None
+        return round(self.memory_used / self.memory_limit * 100, 1)
+
     @classmethod
     def from_api(cls, payload: dict[str, Any]) -> ArcaneContainer:
         """Build a container from an Arcane container summary."""
@@ -163,6 +178,8 @@ class ArcaneContainer:
         update_info = payload.get("updateInfo") or {}
         image = str(payload.get("image") or "")
         status = str(payload.get("status") or "")
+        sample = payload.get("resourceSample")
+        sample = sample if isinstance(sample, dict) else {}
         installed, latest = _image_versions(update_info, image)
         return cls(
             id=str(payload.get("id", "")),
@@ -176,6 +193,9 @@ class ArcaneContainer:
             latest_version=latest,
             health=_health(status),
             exit_code=_exit_code(status),
+            cpu_percent=_number(sample.get("cpuPercent")),
+            memory_used=_number(sample.get("memoryUsageBytes")),
+            memory_limit=_number(sample.get("memoryLimitBytes")),
             project=labels.get("com.docker.compose.project"),
             service=labels.get("com.docker.compose.service"),
         )
